@@ -95,3 +95,101 @@ void print_list(py::list my_list) {
   - pointer: take_ownership
   - lvalue: copy
   - rvalue: move
+
+
+## Inheritance
+### 非多态
+- [https://pybind11.readthedocs.io/en/stable/classes.html#inheritance-and-automatic-downcasting](https://pybind11.readthedocs.io/en/stable/classes.html#inheritance-and-automatic-downcasting)
+- 基类正常绑定需要的函数
+- 子类需要绑定1）子类的构造函数，2）新增的属性和方法
+### 多态非ABC
+- 有虚函数，但是没有纯虚函数
+```C++
+#include <iostream>
+#include <string>
+#include <pybind11/pybind11.h>
+using namespace std;
+namespace py = pybind11;
+
+class Base{
+public:
+    Base(){cout << "Base::Base" << endl;}
+    virtual ~Base(){cout << "Base::~Base" << endl;}
+    void func_normal(){cout << "Base::func_normal" << endl;}
+    virtual void func_virtual(){cout << "Base::func_virtual" << endl;}
+};
+
+
+class Derived: public Base{
+public:
+    Derived(){cout << "Derived::Derived" << endl;}
+    ~Derived(){cout << "Derived::~Derived" << endl;}
+    virtual void func_virtual(){cout << "Derived::func_virtual" << endl;}
+    void func_new(){cout << "Derived::func_new" << endl;}
+};
+
+
+PYBIND11_MODULE(cpp_module_inheritance, m){
+    py::class_<Base>(m, "Base")
+        .def(py::init<>())
+        .def("func_normal", &Base::func_normal)
+        .def("func_virtual", &Base::func_virtual)
+    ;
+
+    py::class_<Derived, Base>(m, "Derived")
+        .def(py::init<>())
+        .def("func_new", &Derived::func_new)
+    ;
+}
+```
+```Python
+import cpp_module_inheritance as lib
+
+class Derived2(lib.Base):
+    def __init__(self):
+        lib.Base.__init__(self)
+        pass
+
+b = lib.Base()
+b.func_normal()
+b.func_virtual()
+print('*'*30)
+
+d1 = lib.Derived()
+d1.func_normal()
+d1.func_virtual()
+d1.func_new()
+print('*'*30)
+
+
+d2 = Derived2()
+d2.func_normal()
+d2.func_virtual()
+print('*'*30)
+```
+```
+Base::Base
+Base::func_normal
+Base::func_virtual
+******************************
+Base::Base
+Derived::Derived
+Base::func_normal
+Derived::func_virtual
+Derived::func_new
+******************************
+Base::Base
+Base::func_normal
+Base::func_virtual
+******************************
+Base::~Base
+Derived::~Derived
+Base::~Base
+Base::~Base
+```
+- 可以发现各种功能都是正常的，C++中继承的子类可以使用自己新的virtual方法，同时Python中也能以Base为基类继续实现新的继承
+### 多态ABC
+- 当基类是ABC（即包含纯虚函数），基类就不能再绑定构造函数了，因为ABC不允许创建object
+- 此时其实不需要按照[https://pybind11.readthedocs.io/en/stable/advanced/classes.html#classes](https://pybind11.readthedocs.io/en/stable/advanced/classes.html#classes)中的修改，也能实现C++转Python，但是在Python中就不能根据Base来创建新的子类了，原因是，如果想要在Python中继承Base创建新的子类，pybind11要求需要在新子类的构造函数中调用基类的构造函数，但前面说了，ABC在pybind11中不允许绑定自己的构造函数
+- 如果实在要在Python中继承基类创建新的子类，那就去看上面的官方文档吧
+- 似乎这样之后，ABC都能被创建了

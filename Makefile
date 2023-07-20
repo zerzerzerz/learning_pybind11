@@ -1,7 +1,8 @@
 # MODULE=cpp_module_basic
 # MODULE=cpp_module_stl
 # MODULE=cpp_module_numpy
-MODULE=cpp_module_tree
+# MODULE=cpp_module_tree
+MODULE=cpp_module_inheritance
 
 SRC_DIR=src
 SOURCES=$(wildcard $(SRC_DIR)/$(MODULE)/*.cpp)
