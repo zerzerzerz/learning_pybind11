@@ -7,7 +7,8 @@
 #include <string>
 #include <cassert>
 
-PYBIND11_MAKE_OPAQUE(std::vector<float>);
+// make this type opaque
+// PYBIND11_MAKE_OPAQUE(std::vector<float>);
 
 using namespace std;
 namespace py = pybind11;
